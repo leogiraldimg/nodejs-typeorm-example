@@ -1,0 +1,57 @@
+name: CI for Node.js Backend
+
+on:
+  push:
+    branches: ["*"]
+  pull_request:
+    branches: ["*"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    env:
+      DATABASE_TYPE: postgres
+      DATABASE_HOST: 127.0.0.1
+      DATABASE_PORT: 5432
+      DATABASE_USERNAME: root
+      DATABASE_PASSWORD: root
+      DATABASE_NAME: tasks-manager
+
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_USER: root
+          POSTGRES_PASSWORD: root
+          POSTGRES_DB: tasks-manager
+        ports:
+          - "5432:5432"
+
+    strategy:
+      matrix:
+        node-version: [18.x]
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Run tests with coverage
+      run: npm run test:cov
+
+    - name: Lint the code
+      run: npm run lint
+
+    - name: Check types
+      run: npm run types:check
+
+    - name: Build the project
+      run: npm run build
