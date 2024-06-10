@@ -14,6 +14,8 @@
         "test:watch": "jest --watch",
         "test:cov": "jest --coverage --runInBand",
         "test:unit": "jest --testPathPattern src/tests/unit/.*test.ts",
+        "migration:dev": "cross-env NODE_ENV=development typeorm-ts-node-commonjs migration:run -d src/infra/datasource/typeorm/ds.typeorm.ts",
+        "migration:prod": "cross-env NODE_ENV=production typeorm-ts-node-commonjs migration:run -d src/infra/datasource/typeorm/ds.typeorm.js",
         "start": "cross-env NODE_ENV=development nodemon -r tsconfig-paths/register src/app.ts"
     },
     "author": "Leonardo Giraldi Moreno Giuranno",
@@ -23,7 +25,10 @@
         "cross-env": "^7.0.3",
         "dotenv": "^16.4.5",
         "fastify": "^4.27.0",
+        "pg": "^8.12.0",
         "rimraf": "^5.0.7",
+        "typeorm": "^0.3.20",
+        "typeorm-extension": "^3.5.1",
         "uuid": "^9.0.1",
         "zod": "^3.23.8"
     },

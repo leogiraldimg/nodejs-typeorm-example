@@ -15,3 +15,4 @@ export * from "./deleteTask.controller.input.boundary.mock";
 export * from "./listTaskById.controller.input.boundary.mock";
 export * from "./updateTask.controller.input.boundary.mock";
 export * from "./task.repository.inMemory.mock";
+export * from "./task.repository.typeorm.mock";

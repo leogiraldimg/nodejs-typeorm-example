@@ -24,12 +24,14 @@ import {
     UpdateTaskInteractor,
 } from "@/useCases/task";
 import {
-    CreateTaskDsInMemory,
-    DeleteTaskDsInMemory,
-    ListTaskByIdDsInMemory,
-    TaskRepositoryInMemory,
-    UpdateTaskDsInMemory,
-} from "@/infra/datasource/inMemory/task";
+    CreateTaskDsTypeorm,
+    DeleteTaskDsTypeorm,
+    ListTaskByIdDsTypeorm,
+    TaskDataMapperTypeorm,
+    TaskRepositoryTypeorm,
+    UpdateTaskDsTypeorm,
+    dsTypeorm,
+} from "@/infra/datasource/typeorm";
 
 const fastify = Fastify({
     logger: process.env.NODE_ENV !== "test" ? true : false,
@@ -37,30 +39,64 @@ const fastify = Fastify({
 
 fastify.register(cors);
 
-const repository = new TaskRepositoryInMemory();
+if (process.env.NODE_ENV !== "test") {
+    dsTypeorm
+        .initialize()
+        .then(() => {
+            console.log(
+                "Conexão com o banco de dados estabelecida com sucesso!"
+            );
+        })
+        .catch((error) => {
+            console.log(
+                `Erro ao estabelecer a conexão com o banco de dados: ${error}`
+            );
+            process.exit(1);
+        });
+}
 
 const taskController = new TaskController(
     new CreateTaskController(
         new CreateTaskInteractor(
-            new CreateTaskDsInMemory(repository),
+            new CreateTaskDsTypeorm(
+                new TaskRepositoryTypeorm(
+                    TaskDataMapperTypeorm,
+                    dsTypeorm.createEntityManager()
+                )
+            ),
             new CreateTaskPresenter()
         )
     ),
     new UpdateTaskController(
         new UpdateTaskInteractor(
-            new UpdateTaskDsInMemory(repository),
+            new UpdateTaskDsTypeorm(
+                new TaskRepositoryTypeorm(
+                    TaskDataMapperTypeorm,
+                    dsTypeorm.createEntityManager()
+                )
+            ),
             new UpdateTaskPresenter()
         )
     ),
     new DeleteTaskController(
         new DeleteTaskInteractor(
-            new DeleteTaskDsInMemory(repository),
+            new DeleteTaskDsTypeorm(
+                new TaskRepositoryTypeorm(
+                    TaskDataMapperTypeorm,
+                    dsTypeorm.createEntityManager()
+                )
+            ),
             new DeleteTaskPresenter()
         )
     ),
     new ListTaskByIdController(
         new ListTaskByIdInteractor(
-            new ListTaskByIdDsInMemory(repository),
+            new ListTaskByIdDsTypeorm(
+                new TaskRepositoryTypeorm(
+                    TaskDataMapperTypeorm,
+                    dsTypeorm.createEntityManager()
+                )
+            ),
             new ListTaskByIdPresenter()
         )
     )
