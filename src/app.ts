@@ -1,6 +1,7 @@
 import Fastify from "fastify";
 import { config } from "dotenv";
 import cors from "@fastify/cors";
+import { runSeeders } from "typeorm-extension";
 
 if (process.env.NODE_ENV !== "production") {
     config();
@@ -42,10 +43,16 @@ fastify.register(cors);
 if (process.env.NODE_ENV !== "test") {
     dsTypeorm
         .initialize()
-        .then(() => {
+        .then(async (ds) => {
             console.log(
                 "Conexão com o banco de dados estabelecida com sucesso!"
             );
+
+            if (process.env.NODE_ENV === "development") {
+                console.log("Executando seeders...");
+                await runSeeders(ds);
+                console.log("Seeders executados com sucesso!");
+            }
         })
         .catch((error) => {
             console.log(

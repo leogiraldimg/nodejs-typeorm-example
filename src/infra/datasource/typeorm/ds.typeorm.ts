@@ -1,12 +1,15 @@
 import { z } from "zod";
 import { config } from "dotenv";
 import { DataSource, DataSourceOptions } from "typeorm";
+import { SeederOptions } from "typeorm-extension";
+
+import { SeederTypeorm } from "./seeder.typeorm";
 
 if (process.env.NODE_ENV !== "production") {
     config();
 }
 
-const options: DataSourceOptions = {
+const options: DataSourceOptions & SeederOptions = {
     type: z
         .enum(["mysql", "postgres", "mongodb"])
         .parse(process.env.DATABASE_TYPE),
@@ -24,6 +27,8 @@ const options: DataSourceOptions = {
         process.env.NODE_ENV === "test"
             ? []
             : [`${__dirname}/migrations/*{.js,.ts}`],
+    seeds: [SeederTypeorm],
+    seedTracking: false,
 };
 
 const dsTypeorm = new DataSource(options);
