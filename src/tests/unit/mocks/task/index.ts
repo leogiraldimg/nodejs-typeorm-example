@@ -16,3 +16,6 @@ export * from "./listTaskById.controller.input.boundary.mock";
 export * from "./updateTask.controller.input.boundary.mock";
 export * from "./task.repository.inMemory.mock";
 export * from "./task.repository.typeorm.mock";
+export * from "./listTasks.ds.gateway.mock";
+export * from "./listTasks.output.boundary.mock";
+export * from "./listTasks.input.boundary.mock";
