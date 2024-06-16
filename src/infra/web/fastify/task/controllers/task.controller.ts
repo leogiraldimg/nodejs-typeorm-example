@@ -7,35 +7,42 @@ import {
     insertTaskSchema,
     updateTaskSchema,
     taskIdSchema,
+    listTasksSchema,
     RequestParamsId,
 } from "..";
 import {
     CreateTaskControllerInputBoundary,
     DeleteTaskControllerInputBoundary,
     ListTaskByIdControllerInputBoundary,
+    ListTasksControllerInputBoundary,
     UpdateTaskControllerInputBoundary,
 } from "@/adapters/task";
 import {
     InvalidAttributeException,
     ResourceNotFoundException,
+    InvalidPaginationParameterException,
 } from "@/adapters/exceptions";
+import { ListTasksRequestModel } from "@/useCases/task";
 
 class TaskController {
     private createTaskInputBoundary: CreateTaskControllerInputBoundary;
     private updateTaskInputBoundary: UpdateTaskControllerInputBoundary;
     private deleteTaskInputBoundary: DeleteTaskControllerInputBoundary;
     private listTaskByIdInputBoundary: ListTaskByIdControllerInputBoundary;
+    private listTasksInputBoundary: ListTasksControllerInputBoundary;
 
     constructor(
         createTaskInputBoundary: CreateTaskControllerInputBoundary,
         updateTaskInputBoundary: UpdateTaskControllerInputBoundary,
         deleteTaskInputBoundary: DeleteTaskControllerInputBoundary,
-        listTaskByIdInputBoundary: ListTaskByIdControllerInputBoundary
+        listTaskByIdInputBoundary: ListTaskByIdControllerInputBoundary,
+        listTasksInputBoundary: ListTasksControllerInputBoundary
     ) {
         this.createTaskInputBoundary = createTaskInputBoundary;
         this.updateTaskInputBoundary = updateTaskInputBoundary;
         this.deleteTaskInputBoundary = deleteTaskInputBoundary;
         this.listTaskByIdInputBoundary = listTaskByIdInputBoundary;
+        this.listTasksInputBoundary = listTasksInputBoundary;
     }
 
     async insert(request: FastifyRequest, reply: FastifyReply) {
@@ -80,6 +87,77 @@ class TaskController {
                     content: task,
                     status: 200,
                     message: "Tarefa alterada com sucesso",
+                })
+            );
+        } catch (error) {
+            const { message, status } = this.formatError(error);
+            reply.status(status).send(
+                new StandardResponseError({
+                    message,
+                    status,
+                })
+            );
+        }
+    }
+
+    async findAllPaged(request: FastifyRequest, reply: FastifyReply) {
+        try {
+            const {
+                page,
+                pageSize,
+                sort,
+                dueDate,
+                description,
+                dueDate_gt,
+                dueDate_gte,
+                dueDate_lt,
+                dueDate_lte,
+                priority,
+                status,
+                title,
+            } = listTasksSchema.parse(request.query);
+            const result = await this.listTasksInputBoundary.list(
+                new ListTasksRequestModel({
+                    page,
+                    pageSize,
+                    sortBy: sort && sort.sortBy,
+                    sortOrder: sort && sort.sortOrder,
+                    filters: {
+                        dueDate: {
+                            exactValue: dueDate,
+                            startInterval:
+                                (dueDate_gt && {
+                                    value: dueDate_gt,
+                                    operator: "gt",
+                                }) ||
+                                (dueDate_gte && {
+                                    value: dueDate_gte,
+                                    operator: "gte",
+                                }),
+                            endInterval:
+                                (dueDate_lt && {
+                                    value: dueDate_lt,
+                                    operator: "lt",
+                                }) ||
+                                (dueDate_lte && {
+                                    value: dueDate_lte,
+                                    operator: "lte",
+                                }),
+                        },
+                        description,
+                        priority,
+                        status,
+                        title,
+                    },
+                })
+            );
+
+            reply.status(200).send(
+                new StandardResponseSuccess({
+                    content: result.tasks,
+                    status: 200,
+                    message: "Tarefas encontradas com sucesso",
+                    pagination: result.pagination,
                 })
             );
         } catch (error) {
@@ -159,6 +237,13 @@ class TaskController {
         if (error instanceof ZodError) {
             return {
                 message: error.issues[0].message,
+                status: 400,
+            };
+        }
+
+        if (error instanceof InvalidPaginationParameterException) {
+            return {
+                message: error.message,
                 status: 400,
             };
         }

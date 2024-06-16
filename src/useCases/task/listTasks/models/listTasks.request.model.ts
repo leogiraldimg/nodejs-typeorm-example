@@ -1,6 +1,6 @@
 class ListTasksRequestModel {
-    page?: number;
-    pageSize?: number;
+    page: number;
+    pageSize: number;
     sortBy?: string;
     sortOrder?: "ASC" | "DESC";
     filters: {

@@ -19,3 +19,4 @@ export * from "./task.repository.typeorm.mock";
 export * from "./listTasks.ds.gateway.mock";
 export * from "./listTasks.output.boundary.mock";
 export * from "./listTasks.input.boundary.mock";
+export * from "./listTasks.controller.input.boundary.mock";

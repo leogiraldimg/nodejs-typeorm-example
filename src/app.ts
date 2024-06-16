@@ -15,6 +15,8 @@ import {
     DeleteTaskPresenter,
     ListTaskByIdController,
     ListTaskByIdPresenter,
+    ListTasksController,
+    ListTasksPresenter,
     UpdateTaskController,
     UpdateTaskPresenter,
 } from "@/adapters/task";
@@ -22,12 +24,14 @@ import {
     CreateTaskInteractor,
     DeleteTaskInteractor,
     ListTaskByIdInteractor,
+    ListTasksInteractor,
     UpdateTaskInteractor,
 } from "@/useCases/task";
 import {
     CreateTaskDsTypeorm,
     DeleteTaskDsTypeorm,
     ListTaskByIdDsTypeorm,
+    ListTasksDsTypeorm,
     TaskDataMapperTypeorm,
     TaskRepositoryTypeorm,
     UpdateTaskDsTypeorm,
@@ -106,11 +110,25 @@ const taskController = new TaskController(
             ),
             new ListTaskByIdPresenter()
         )
+    ),
+    new ListTasksController(
+        new ListTasksInteractor(
+            new ListTasksDsTypeorm(
+                new TaskRepositoryTypeorm(
+                    TaskDataMapperTypeorm,
+                    dsTypeorm.createEntityManager()
+                )
+            ),
+            new ListTasksPresenter()
+        )
     )
 );
 
 fastify.post("/tasks", async (request, reply) => {
     await taskController.insert(request, reply);
+});
+fastify.get("/tasks", async (request, reply) => {
+    await taskController.findAllPaged(request, reply);
 });
 fastify.get<{ Params: RequestParamsId }>(
     "/tasks/:id",

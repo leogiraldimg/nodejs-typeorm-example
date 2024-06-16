@@ -6,6 +6,7 @@ import {
     deleteTaskControllerInputBoundaryMock,
     listTaskByIdControllerInputBoundaryMock,
     updateTaskControllerInputBoundaryMock,
+    listTasksControllerInputBoundaryMock,
 } from "@/tests/unit/mocks/task";
 import {
     fastifyReplyMock,
@@ -22,10 +23,12 @@ import {
     CreateTaskResponseModel,
     UpdateTaskResponseModel,
     ListTaskByIdResponseModel,
+    ListTasksResponseModel,
 } from "@/useCases/task";
 import {
     InvalidAttributeException,
     ResourceNotFoundException,
+    InvalidPaginationParameterException,
 } from "@/adapters/exceptions";
 
 describe("TaskController", () => {
@@ -42,8 +45,246 @@ describe("TaskController", () => {
             createTaskControllerInputBoundaryMock,
             updateTaskControllerInputBoundaryMock,
             deleteTaskControllerInputBoundaryMock,
-            listTaskByIdControllerInputBoundaryMock
+            listTaskByIdControllerInputBoundaryMock,
+            listTasksControllerInputBoundaryMock
         );
+    });
+
+    describe("findAllPaged", () => {
+        let responseModel: ListTasksResponseModel;
+
+        beforeEach(() => {
+            responseModel = new ListTasksResponseModel({
+                tasks: [
+                    {
+                        description: "Task 1 description",
+                        dueDate: new Date("2022-01-01T00:00:00.000Z"),
+                        id: "1",
+                        title: "Task 1",
+                        priority: "low",
+                        status: "todo",
+                    },
+                ],
+                pagination: {
+                    currentPage: 1,
+                    nextPage: null,
+                    previousPage: null,
+                    totalCount: 1,
+                    totalPages: 1,
+                },
+            });
+
+            listTasksControllerInputBoundaryMock.list.mockResolvedValue(
+                responseModel
+            );
+
+            fastifyRequestMock.query = {
+                page: "1",
+                pageSize: "10",
+                sort: "title,ASC",
+                title: "Task 1",
+                description: "Task 1 description",
+                status: "todo",
+                priority: "low",
+                dueDate: "2022-01-01T00:00:00.000Z",
+                dueDate_gt: "2022-01-01T00:00:00.000Z",
+                dueDate_lt: "2022-01-01T00:00:00.000Z",
+            };
+        });
+
+        it("should return 200, list of tasks and pagination", async () => {
+            await controller.findAllPaged(fastifyRequestMock, fastifyReplyMock);
+
+            expect(fastifyReplyMock.status).toHaveBeenCalledWith(200);
+            expect(fastifyReplyMock.send).toHaveBeenCalledWith(
+                new StandardResponseSuccess({
+                    content: responseModel.tasks,
+                    status: 200,
+                    message: "Tarefas encontradas com sucesso",
+                    pagination: responseModel.pagination,
+                })
+            );
+        });
+
+        it("should list tasks when due date gte and lte are given", async () => {
+            fastifyRequestMock.query = {
+                dueDate_gt: undefined,
+                dueDate_gte: "2022-01-01T00:00:00.000Z",
+                dueDate_lt: undefined,
+                dueDate_lte: "2022-01-01T00:00:00.000Z",
+            };
+
+            await controller.findAllPaged(fastifyRequestMock, fastifyReplyMock);
+
+            expect(
+                listTasksControllerInputBoundaryMock.list
+            ).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    filters: expect.objectContaining({
+                        dueDate: {
+                            exactValue: undefined,
+                            startInterval: {
+                                value: new Date("2022-01-01T00:00:00.000Z"),
+                                operator: "gte",
+                            },
+                            endInterval: {
+                                value: new Date("2022-01-01T00:00:00.000Z"),
+                                operator: "lte",
+                            },
+                        },
+                    }),
+                })
+            );
+        });
+
+        it("should return 400 when invalid pagination parameter exception when finding all tasks", async () => {
+            listTasksControllerInputBoundaryMock.list.mockRejectedValue(
+                new InvalidPaginationParameterException(
+                    "Invalid pagination parameter"
+                )
+            );
+
+            await controller.findAllPaged(fastifyRequestMock, fastifyReplyMock);
+
+            expect(fastifyReplyMock.status).toHaveBeenCalledWith(400);
+            expect(fastifyReplyMock.send).toHaveBeenCalledWith(
+                new StandardResponseError({
+                    message: "Invalid pagination parameter",
+                    status: 400,
+                })
+            );
+        });
+
+        it("should return 400 when sort is invalid", async () => {
+            fastifyRequestMock.query = {
+                sort: "invalid",
+            };
+
+            await controller.findAllPaged(fastifyRequestMock, fastifyReplyMock);
+
+            expect(fastifyReplyMock.status).toHaveBeenCalledWith(400);
+            expect(fastifyReplyMock.send).toHaveBeenCalledWith(
+                new StandardResponseError({
+                    message:
+                        "Parâmetro sort deve ser uma string no formato 'atributo,ASC|DESC'",
+                    status: 400,
+                })
+            );
+        });
+
+        it("should return 400 when status is invalid", async () => {
+            fastifyRequestMock.query = {
+                status: "invalid",
+            };
+
+            await controller.findAllPaged(fastifyRequestMock, fastifyReplyMock);
+
+            expect(fastifyReplyMock.status).toHaveBeenCalledWith(400);
+            expect(fastifyReplyMock.send).toHaveBeenCalledWith(
+                new StandardResponseError({
+                    message:
+                        "Parâmetro status deve ser 'todo', 'inProgress' ou 'done'",
+                    status: 400,
+                })
+            );
+        });
+
+        it("should return 400 when priority is invalid", async () => {
+            fastifyRequestMock.query = {
+                priority: "invalid",
+            };
+
+            await controller.findAllPaged(fastifyRequestMock, fastifyReplyMock);
+
+            expect(fastifyReplyMock.status).toHaveBeenCalledWith(400);
+            expect(fastifyReplyMock.send).toHaveBeenCalledWith(
+                new StandardResponseError({
+                    message:
+                        "Parâmetro priority deve ser 'low', 'medium', 'high' ou 'critical'",
+                    status: 400,
+                })
+            );
+        });
+
+        it("should return 400 when dueDate is invalid", async () => {
+            fastifyRequestMock.query = {
+                dueDate: "invalid",
+            };
+
+            await controller.findAllPaged(fastifyRequestMock, fastifyReplyMock);
+
+            expect(fastifyReplyMock.status).toHaveBeenCalledWith(400);
+            expect(fastifyReplyMock.send).toHaveBeenCalledWith(
+                new StandardResponseError({
+                    message: "Data deve ser no formato YYYY-MM-DDTHH:MM:SSZ",
+                    status: 400,
+                })
+            );
+        });
+
+        it("should return 400 when dueDate_gt is invalid", async () => {
+            fastifyRequestMock.query = {
+                dueDate_gt: "invalid",
+            };
+
+            await controller.findAllPaged(fastifyRequestMock, fastifyReplyMock);
+
+            expect(fastifyReplyMock.status).toHaveBeenCalledWith(400);
+            expect(fastifyReplyMock.send).toHaveBeenCalledWith(
+                new StandardResponseError({
+                    message: "Data deve ser no formato YYYY-MM-DDTHH:MM:SSZ",
+                    status: 400,
+                })
+            );
+        });
+
+        it("should return 400 when dueDate_gte is invalid", async () => {
+            fastifyRequestMock.query = {
+                dueDate_gte: "invalid",
+            };
+
+            await controller.findAllPaged(fastifyRequestMock, fastifyReplyMock);
+
+            expect(fastifyReplyMock.status).toHaveBeenCalledWith(400);
+            expect(fastifyReplyMock.send).toHaveBeenCalledWith(
+                new StandardResponseError({
+                    message: "Data deve ser no formato YYYY-MM-DDTHH:MM:SSZ",
+                    status: 400,
+                })
+            );
+        });
+
+        it("should return 400 when dueDate_lt is invalid", async () => {
+            fastifyRequestMock.query = {
+                dueDate_lt: "invalid",
+            };
+
+            await controller.findAllPaged(fastifyRequestMock, fastifyReplyMock);
+
+            expect(fastifyReplyMock.status).toHaveBeenCalledWith(400);
+            expect(fastifyReplyMock.send).toHaveBeenCalledWith(
+                new StandardResponseError({
+                    message: "Data deve ser no formato YYYY-MM-DDTHH:MM:SSZ",
+                    status: 400,
+                })
+            );
+        });
+
+        it("should return 400 when dueDate_lte is invalid", async () => {
+            fastifyRequestMock.query = {
+                dueDate_lte: "invalid",
+            };
+
+            await controller.findAllPaged(fastifyRequestMock, fastifyReplyMock);
+
+            expect(fastifyReplyMock.status).toHaveBeenCalledWith(400);
+            expect(fastifyReplyMock.send).toHaveBeenCalledWith(
+                new StandardResponseError({
+                    message: "Data deve ser no formato YYYY-MM-DDTHH:MM:SSZ",
+                    status: 400,
+                })
+            );
+        });
     });
 
     describe("insert", () => {

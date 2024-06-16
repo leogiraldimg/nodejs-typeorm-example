@@ -1,6 +1,6 @@
 class ListTasksDsRequestModel {
-    page?: number;
-    pageSize?: number;
+    page: number;
+    pageSize: number;
     sortBy?: string;
     sortOrder?: "ASC" | "DESC";
     filters: {
@@ -22,8 +22,8 @@ class ListTasksDsRequestModel {
     };
 
     constructor(params: {
-        page?: number;
-        pageSize?: number;
+        page: number;
+        pageSize: number;
         sortBy?: string;
         sortOrder?: "ASC" | "DESC";
         filters: {
