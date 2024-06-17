@@ -4,6 +4,7 @@ import {
     LessThanOrEqual,
     MoreThanOrEqual,
     Like,
+    And,
 } from "typeorm";
 
 import { taskRepositoryTypeormMock } from "@/tests/unit/mocks/task";
@@ -137,11 +138,9 @@ describe("ListTasksDsTypeorm", () => {
 
             expect(taskRepositoryTypeormMock.findAndCount).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    where: expect.arrayContaining([
-                        expect.objectContaining({
-                            dueDate: new Date("2020-01-01T00:00:00.000Z"),
-                        }),
-                    ]),
+                    where: expect.objectContaining({
+                        dueDate: new Date("2020-01-01T00:00:00.000Z"),
+                    }),
                 })
             );
         });
@@ -162,18 +161,12 @@ describe("ListTasksDsTypeorm", () => {
 
             expect(taskRepositoryTypeormMock.findAndCount).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    where: expect.arrayContaining([
-                        expect.objectContaining({
-                            dueDate: MoreThan(
-                                new Date("2020-01-01T00:00:00.000Z")
-                            ),
-                        }),
-                        expect.objectContaining({
-                            dueDate: LessThan(
-                                new Date("2020-01-02T00:00:00.000Z")
-                            ),
-                        }),
-                    ]),
+                    where: expect.objectContaining({
+                        dueDate: And(
+                            MoreThan(new Date("2020-01-01T00:00:00.000Z")),
+                            LessThan(new Date("2020-01-02T00:00:00.000Z"))
+                        ),
+                    }),
                 })
             );
         });
@@ -194,18 +187,16 @@ describe("ListTasksDsTypeorm", () => {
 
             expect(taskRepositoryTypeormMock.findAndCount).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    where: expect.arrayContaining([
-                        expect.objectContaining({
-                            dueDate: MoreThanOrEqual(
+                    where: expect.objectContaining({
+                        dueDate: And(
+                            MoreThanOrEqual(
                                 new Date("2020-01-01T00:00:00.000Z")
                             ),
-                        }),
-                        expect.objectContaining({
-                            dueDate: LessThanOrEqual(
+                            LessThanOrEqual(
                                 new Date("2020-01-02T00:00:00.000Z")
-                            ),
-                        }),
-                    ]),
+                            )
+                        ),
+                    }),
                 })
             );
         });
@@ -217,11 +208,9 @@ describe("ListTasksDsTypeorm", () => {
 
             expect(taskRepositoryTypeormMock.findAndCount).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    where: expect.arrayContaining([
-                        expect.objectContaining({
-                            description: Like("Task 1 description"),
-                        }),
-                    ]),
+                    where: expect.objectContaining({
+                        description: Like("Task 1 description"),
+                    }),
                 })
             );
         });
@@ -233,11 +222,9 @@ describe("ListTasksDsTypeorm", () => {
 
             expect(taskRepositoryTypeormMock.findAndCount).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    where: expect.arrayContaining([
-                        expect.objectContaining({
-                            title: Like("Task 1"),
-                        }),
-                    ]),
+                    where: expect.objectContaining({
+                        title: Like("Task 1"),
+                    }),
                 })
             );
         });
