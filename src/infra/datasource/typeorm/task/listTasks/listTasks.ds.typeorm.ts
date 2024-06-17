@@ -1,4 +1,5 @@
 import {
+    And,
     FindOptionsWhere,
     LessThan,
     LessThanOrEqual,
@@ -36,10 +37,10 @@ class ListTasksDsTypeorm implements ListTasksDsGateway {
                   }
                 : undefined,
             /* eslint-disable indent */
-            where: [
-                this.buildFiltersQuery(filters),
+            where: {
+                ...this.buildFiltersQuery(filters),
                 ...this.buildDateQuery(dueDate),
-            ],
+            },
         });
 
         return new ListTasksDsResponseModel({
@@ -77,38 +78,28 @@ class ListTasksDsTypeorm implements ListTasksDsGateway {
 
     private buildDateQuery(
         dueDate: ListTasksDsRequestModel["filters"]["dueDate"]
-    ): FindOptionsWhere<TaskDataMapperTypeorm>[] {
+    ): FindOptionsWhere<TaskDataMapperTypeorm> {
         if (dueDate) {
             const { startInterval, endInterval, exactValue } = dueDate;
             if (exactValue) {
-                return [
-                    {
-                        dueDate: exactValue,
-                    },
-                ];
+                return { dueDate: exactValue };
             } else if (startInterval && endInterval) {
-                return [
-                    {
-                        dueDate:
-                            startInterval.operator === "gt"
-                                ? MoreThan(startInterval.value)
-                                : MoreThanOrEqual(startInterval.value),
-                    },
-                    {
-                        dueDate:
-                            endInterval.operator === "lt"
-                                ? LessThan(endInterval.value)
-                                : LessThanOrEqual(endInterval.value),
-                    },
-                ];
+                return {
+                    dueDate: And(
+                        startInterval.operator === "gt"
+                            ? MoreThan(startInterval.value)
+                            : MoreThanOrEqual(startInterval.value),
+                        endInterval.operator === "lt"
+                            ? LessThan(endInterval.value)
+                            : LessThanOrEqual(endInterval.value)
+                    ),
+                };
             }
         }
 
-        return [
-            {
-                dueDate: undefined,
-            },
-        ];
+        return {
+            dueDate: undefined,
+        };
     }
 }
 

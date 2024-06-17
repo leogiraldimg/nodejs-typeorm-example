@@ -10,10 +10,7 @@ const listTasksSchema = z.object({
         .optional()
         .transform((pageSize) => Number(pageSize)),
     sort: z
-        .string({
-            invalid_type_error:
-                "Parâmetro sort deve ser uma string no formato 'atributo,ASC|DESC'",
-        })
+        .string()
         .regex(/^[a-zA-Z]+,ASC|DESC$/, {
             message:
                 "Parâmetro sort deve ser uma string no formato 'atributo,ASC|DESC'",
