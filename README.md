@@ -1,4 +1,4 @@
-<h1 align="center">🔭 Node.js API - TypeORM usage example</h1>
+<h1 align="center">💾 Node.js API - TypeORM usage example</h1>
 
 [![CI for Node.js Backend](https://github.com/leogiraldimg/nodejs-typeorm-example/actions/workflows/ci.yaml/badge.svg?branch=main)](https://github.com/leogiraldimg/nodejs-typeorm-example/actions/workflows/ci.yaml)
 
